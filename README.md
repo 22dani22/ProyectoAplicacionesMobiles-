@@ -1,4 +1,6 @@
-# 🏋️‍♂️ FitPulse - Aplicación Móvil de Fitness y Nutrición
+# ProyectoAplicacionesMobiles-
+
+## 🏋️‍♂️ FitPulse - Aplicación Móvil de Fitness y Nutrición
 
 FitPulse es una aplicación móvil desarrollada con **React Native** y **Expo (SDK 57)**, diseñada para el seguimiento de entrenamientos en el gimnasio, gestión de rutinas con ejercicios y series, y planificación diaria de calorías.
 
