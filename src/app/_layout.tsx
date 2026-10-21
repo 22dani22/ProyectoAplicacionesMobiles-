@@ -23,22 +23,24 @@ import "../../global.css";
 // Equivalente a un historial de páginas (ir hacia adelante/atrás)
 import { Stack } from "expo-router";
 
+import React, { useEffect } from "react";
+import { Platform } from "react-native";
+
 // NavigationBar: controla la barra de navegación inferior de Android
 // (los botones de inicio, atrás y recientes del sistema)
-import { NavigationBar } from "expo-navigation-bar";
+import * as NavigationBar from "expo-navigation-bar";
 
 export default function RootLayout() {
+  useEffect(() => {
+    // En Android, ocultamos la barra de navegación del sistema para modo inmersivo
+    if (Platform.OS === "android") {
+      NavigationBar.setVisibilityAsync("hidden");
+    }
+  }, []);
+
   return (
     // Fragment (<>) agrupa elementos sin añadir un contenedor extra al DOM
     <>
-      {/*
-       * NavigationBar hidden:
-       * Oculta la barra de navegación del sistema en Android.
-       * Esto da más espacio visual a la app (modo inmersivo).
-       * En iOS no tiene efecto porque iOS maneja su barra diferente.
-       */}
-      <NavigationBar hidden />
-
       {/*
        * Stack: define que la navegación entre pantallas será en "pila"
        * headerShown: false → oculta la barra de título nativa en TODAS las pantallas
