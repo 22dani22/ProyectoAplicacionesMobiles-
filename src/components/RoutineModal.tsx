@@ -315,10 +315,14 @@ export function ModalRutina({
          */}
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1 bg-black/50 justify-end"
+          className="flex-1 justify-end"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
         >
           {/* Contenedor principal del modal (hoja inferior) */}
-          <View className="bg-white rounded-t-3xl max-h-[90%] border-t border-neutral-200 shadow-xl">
+          <View
+            className="bg-white rounded-t-3xl max-h-[90%] border-t border-neutral-200"
+            style={{ boxShadow: "0 20px 25px -5px rgba(0,0,0,0.10), 0 8px 10px -6px rgba(0,0,0,0.10)" }}
+          >
 
             {/* CABECERA: Cancelar | Título | Guardar */}
             <View className="flex-row items-center justify-between px-5 pt-4 pb-3 border-b border-neutral-200">
@@ -427,7 +431,10 @@ export function ModalRutina({
                   </View>
 
                   {/* TABLA DE SERIES: cabecera */}
-                  <View className="flex-row items-center justify-between px-2 py-1.5 mb-1 bg-neutral-200/60 rounded-lg">
+                  <View
+                    className="flex-row items-center justify-between px-2 py-1.5 mb-1 rounded-lg"
+                    style={{ backgroundColor: "rgba(229,229,229,0.6)" }}
+                  >
                     <Text className="text-neutral-600 text-xs font-bold w-12 text-center">
                       SERIE
                     </Text>
@@ -504,7 +511,7 @@ export function ModalRutina({
               {/* Botón grande "Agregar Ejercicio desde el Catálogo" al pie */}
               <TouchableOpacity
                 onPress={() => setSelectorVisible(true)}
-                className="flex-row items-center justify-center py-3.5 bg-neutral-100 rounded-2xl border border-dashed border-neutral-300 mb-8 active:opacity-75"
+                className="flex-row items-center justify-center py-3.5 bg-neutral-100 rounded-2xl border border-dashed border-neutral-300 mb-8 active:bg-neutral-200"
               >
                 <Ionicons name="add-circle-outline" size={20} color="#EA580C" />
                 <Text className="text-neutral-900 font-bold text-sm ml-2">

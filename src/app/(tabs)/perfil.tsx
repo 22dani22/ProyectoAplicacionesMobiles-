@@ -101,7 +101,10 @@ export default function PerfilScreen() {
         </View>
 
         {/* Tarjeta de usuario */}
-        <View className="mb-6 flex-row items-center rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
+        <View
+          className="mb-6 flex-row items-center rounded-2xl border border-neutral-200 bg-white p-4"
+          style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.10)" }}
+        >
           <View className="h-16 w-16 items-center justify-center rounded-full bg-orange-500">
             <Text className="text-2xl font-black text-white">{inicial}</Text>
           </View>
@@ -119,7 +122,10 @@ export default function PerfilScreen() {
         </View>
 
         {/* Opciones */}
-        <View className="mb-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+        <View
+          className="mb-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white"
+          style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.10)" }}
+        >
           {opciones.map((opcion, idx) => (
             <Pressable
               key={opcion.titulo}
@@ -151,9 +157,13 @@ export default function PerfilScreen() {
       <Modal visible={modalVisible} animationType="fade" transparent>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1 justify-center bg-black/50 px-6"
+          className="flex-1 justify-center px-6"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
         >
-          <View className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-2xl">
+          <View
+            className="rounded-3xl border border-neutral-200 bg-white p-6"
+            style={{ boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}
+          >
             <Text className="mb-4 text-center text-xl font-bold text-neutral-900">
               Datos personales
             </Text>

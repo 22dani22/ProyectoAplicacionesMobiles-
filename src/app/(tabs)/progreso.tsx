@@ -154,7 +154,7 @@ export default function PantallaCalorias() {
               setTextoNuevaMeta(metaDiaria.toString());
               setModalMetaVisible(true);
             }}
-            className="flex-row items-center bg-white border border-neutral-200 px-3 py-1.5 rounded-full shadow-xs active:bg-neutral-50"
+            className="flex-row items-center bg-white border border-neutral-200 px-3 py-1.5 rounded-full active:bg-neutral-50"
           >
             <Ionicons name="flag-outline" size={14} color="#EA580C" />
             <Text className="text-xs font-bold text-neutral-800 ml-1">
@@ -164,7 +164,7 @@ export default function PantallaCalorias() {
         </View>
 
         {/* 2. Tarjeta Resumen Principal (Contador de Calorías) */}
-        <View className="bg-white border border-neutral-200 rounded-3xl p-5 mb-5 shadow-xs">
+        <View className="bg-white border border-neutral-200 rounded-3xl p-5 mb-5">
           <View className="flex-row items-center justify-between mb-3">
             <Text className="text-neutral-500 font-semibold text-sm">
               Consumo de hoy
@@ -232,7 +232,7 @@ export default function PantallaCalorias() {
         {/* 3. Botón Principal: Registrar Alimento */}
         <TouchableOpacity
           onPress={() => setModalAgregarVisible(true)}
-          className="bg-orange-500 rounded-2xl py-3.5 px-4 mb-5 flex-row items-center justify-center shadow-xs active:bg-orange-600"
+          className="bg-orange-500 rounded-2xl py-3.5 px-4 mb-5 flex-row items-center justify-center active:bg-orange-600"
         >
           <Ionicons name="add-circle-outline" size={22} color="#FFFFFF" />
           <Text className="text-white font-bold text-base ml-2">
@@ -298,7 +298,7 @@ export default function PantallaCalorias() {
         {alimentosFiltrados.map((item) => (
           <View
             key={item.id}
-            className="bg-white border border-neutral-200 rounded-2xl p-4 mb-3 shadow-xs flex-row items-center justify-between"
+            className="bg-white border border-neutral-200 rounded-2xl p-4 mb-3 flex-row items-center justify-between"
           >
             <View className="flex-row items-center flex-1 mr-3">
               <View className="w-10 h-10 rounded-xl bg-orange-50 items-center justify-center mr-3">
@@ -349,7 +349,7 @@ export default function PantallaCalorias() {
         ) : null}
 
         {!cargando && !error && alimentosFiltrados.length === 0 && (
-          <View className="bg-white border border-dashed border-neutral-300 rounded-2xl p-8 items-center justify-center my-3 shadow-xs">
+          <View className="bg-white border border-dashed border-neutral-300 rounded-2xl p-8 items-center justify-center my-3">
             <View className="w-14 h-14 rounded-full bg-orange-50 items-center justify-center mb-3">
               <Ionicons name="restaurant-outline" size={28} color="#EA580C" />
             </View>
@@ -363,7 +363,7 @@ export default function PantallaCalorias() {
             </Text>
             <TouchableOpacity
               onPress={() => setModalAgregarVisible(true)}
-              className="bg-orange-500 px-5 py-2.5 rounded-xl active:bg-orange-600 shadow-xs"
+              className="bg-orange-500 px-5 py-2.5 rounded-xl active:bg-orange-600"
             >
               <Text className="text-white font-bold text-sm">
                 + Agregar alimento
@@ -377,9 +377,13 @@ export default function PantallaCalorias() {
       <Modal visible={modalAgregarVisible} animationType="slide" transparent>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1 bg-black/50 justify-end"
+          className="flex-1 justify-end"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
         >
-          <View className="bg-white rounded-t-3xl border-t border-neutral-200 p-5 pb-8 shadow-2xl">
+          <View
+            className="bg-white rounded-t-3xl border-t border-neutral-200 p-5 pb-8"
+            style={{ boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}
+          >
             {/* Cabecera Modal */}
             <View className="flex-row items-center justify-between pb-3 mb-4 border-b border-neutral-100">
               <TouchableOpacity onPress={() => setModalAgregarVisible(false)}>
@@ -466,9 +470,13 @@ export default function PantallaCalorias() {
       <Modal visible={modalMetaVisible} animationType="fade" transparent>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1 bg-black/50 justify-center px-6"
+          className="flex-1 justify-center px-6"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
         >
-          <View className="bg-white rounded-3xl p-6 shadow-2xl border border-neutral-200">
+          <View
+            className="bg-white rounded-3xl p-6 border border-neutral-200"
+            style={{ boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}
+          >
             <Text className="text-neutral-900 font-bold text-xl mb-1 text-center">
               Objetivo Diario
             </Text>

@@ -47,19 +47,25 @@ export default function InicioScreen() {
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={() => router.push("/progreso")}
-          className="mb-6 rounded-2xl bg-orange-500 p-5 shadow-sm"
+          className="mb-6 rounded-2xl bg-orange-500 p-5"
+          style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.10)" }}
         >
           <View className="flex-row items-center justify-between">
-            <Text className="text-sm font-semibold text-white/90">Calorías de hoy</Text>
+            <Text className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.9)" }}>
+              Calorías de hoy
+            </Text>
             <Ionicons name="flame" size={20} color="#FFFFFF" />
           </View>
           <Text className="mt-1 text-2xl font-bold text-white">
             {totalCalorias} / {meta} kcal
           </Text>
-          <View className="mt-4 h-2 w-full rounded-full bg-white/30">
+          <View
+            className="mt-4 h-2 w-full rounded-full"
+            style={{ backgroundColor: "rgba(255,255,255,0.3)" }}
+          >
             <View className="h-2 rounded-full bg-white" style={{ width: `${porcentaje}%` }} />
           </View>
-          <Text className="mt-2 text-xs font-semibold text-white/90">
+          <Text className="mt-2 text-xs font-semibold" style={{ color: "rgba(255,255,255,0.9)" }}>
             {totalCalorias > meta
               ? `Te pasaste ${totalCalorias - meta} kcal`
               : `Te quedan ${restantes} kcal · ${alimentos.length} alimentos registrados`}
@@ -86,7 +92,8 @@ export default function InicioScreen() {
           {rutinaDestacada ? (
             <TouchableOpacity
               onPress={() => router.push("/entrenos")}
-              className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm"
+              className="rounded-xl border border-neutral-200 bg-white p-4"
+              style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.10)" }}
             >
               <Text className="text-base font-bold text-neutral-900">{rutinaDestacada.nombre}</Text>
               <Text className="mt-1 text-sm text-neutral-500">

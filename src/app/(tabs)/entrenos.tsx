@@ -202,7 +202,7 @@ export default function PantallaEntrenos() {
         {/* 2. BOTÓN "EMPEZAR ENTRENAMIENTO VACÍO" */}
         <TouchableOpacity
           onPress={() => iniciarEntrenamiento("Entrenamiento Vacío")}
-          className="bg-white border border-neutral-200 rounded-2xl py-3.5 px-4 mb-6 flex-row items-center justify-center shadow-xs active:bg-neutral-50"
+          className="bg-white border border-neutral-200 rounded-2xl py-3.5 px-4 mb-6 flex-row items-center justify-center active:bg-neutral-50"
         >
           <Ionicons name="add" size={22} color="#1F2937" />
           <Text className="text-neutral-900 font-bold text-base ml-2">
@@ -223,7 +223,7 @@ export default function PantallaEntrenos() {
           {/* Cuadrado: Nueva Rutina → abre el modal de creación */}
           <TouchableOpacity
             onPress={abrirModalCrear}
-            className="flex-1 bg-white border border-neutral-200 rounded-2xl p-4 mr-2 flex-row items-center shadow-xs active:bg-neutral-50"
+            className="flex-1 bg-white border border-neutral-200 rounded-2xl p-4 mr-2 flex-row items-center active:bg-neutral-50"
           >
             <View className="w-10 h-10 rounded-xl bg-orange-100 items-center justify-center mr-3">
               <Ionicons name="clipboard-outline" size={20} color="#EA580C" />
@@ -239,7 +239,7 @@ export default function PantallaEntrenos() {
           {/* Cuadrado: Explorar → placeholder con Alert */}
           <TouchableOpacity
             onPress={() => Alert.alert("Explorar", "Explorador de rutinas de la comunidad.")}
-            className="flex-1 bg-white border border-neutral-200 rounded-2xl p-4 ml-2 flex-row items-center shadow-xs active:bg-neutral-50"
+            className="flex-1 bg-white border border-neutral-200 rounded-2xl p-4 ml-2 flex-row items-center active:bg-neutral-50"
           >
             <View className="w-10 h-10 rounded-xl bg-neutral-100 items-center justify-center mr-3">
               <Ionicons name="search-outline" size={20} color="#4B5563" />
@@ -257,7 +257,7 @@ export default function PantallaEntrenos() {
             Renderizado condicional: {condición && <Componente />}
             Solo se muestra si mostrarBanner === true */}
         {mostrarBanner && (
-          <View className="bg-[#FEF08A] border border-amber-200 rounded-xl px-3.5 py-2.5 mb-5 flex-row items-center justify-between shadow-xs">
+          <View className="bg-[#FEF08A] border border-amber-200 rounded-xl px-3.5 py-2.5 mb-5 flex-row items-center justify-between">
             <View className="flex-row items-center flex-1 mr-2">
               <Ionicons name="finger-print-outline" size={18} color="#713F12" />
               <Text
@@ -289,7 +289,7 @@ export default function PantallaEntrenos() {
         {rutinas.map((rutina) => (
           <View
             key={rutina.id}
-            className="bg-white border border-neutral-200 rounded-2xl p-4 mb-4 shadow-xs"
+            className="bg-white border border-neutral-200 rounded-2xl p-4 mb-4"
           >
             {/* Fila superior: Título y menú ··· */}
             <View className="flex-row items-center justify-between mb-3">
@@ -382,7 +382,7 @@ export default function PantallaEntrenos() {
         ) : null}
 
         {!cargando && !error && rutinas.length === 0 && (
-          <View className="bg-white border border-dashed border-neutral-300 rounded-2xl p-8 items-center justify-center my-3 shadow-xs">
+          <View className="bg-white border border-dashed border-neutral-300 rounded-2xl p-8 items-center justify-center my-3">
             <View className="w-14 h-14 rounded-full bg-orange-100 items-center justify-center mb-3">
               <Ionicons name="barbell-outline" size={28} color="#EA580C" />
             </View>
@@ -394,7 +394,7 @@ export default function PantallaEntrenos() {
             </Text>
             <TouchableOpacity
               onPress={abrirModalCrear}
-              className="bg-orange-500 px-5 py-3 rounded-xl active:bg-orange-600 shadow-xs"
+              className="bg-orange-500 px-5 py-3 rounded-xl active:bg-orange-600"
             >
               <Text className="text-white font-bold text-sm">
                 + Crear mi primera rutina
@@ -432,10 +432,14 @@ export default function PantallaEntrenos() {
         onRequestClose={() => setMenuOpcionesVisible(false)} // Botón "atrás" de Android
       >
         <Pressable
-          className="flex-1 bg-black/40 justify-end"
+          className="flex-1 justify-end"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
           onPress={() => setMenuOpcionesVisible(false)} // Cerrar al presionar afuera
         >
-          <View className="bg-white border-t border-neutral-200 rounded-t-3xl p-5 pb-8 shadow-2xl">
+          <View
+            className="bg-white border-t border-neutral-200 rounded-t-3xl p-5 pb-8"
+            style={{ boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}
+          >
             <Text className="text-neutral-400 text-center text-xs font-bold uppercase mb-4">
               Opciones: {rutinaSeleccionada?.nombre}
               {/* ?. (optional chaining): accede a .nombre solo si rutinaSeleccionada no es null */}

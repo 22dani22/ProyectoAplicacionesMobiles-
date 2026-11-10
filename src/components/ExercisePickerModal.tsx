@@ -68,9 +68,13 @@ export function ModalSelectorEjercicio({
     <Modal visible={visible} animationType="slide" transparent>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1 bg-black/60 justify-end"
+        className="flex-1 justify-end"
+        style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
       >
-        <View className="bg-white rounded-t-3xl max-h-[85%] border-t border-neutral-200 shadow-2xl">
+        <View
+          className="bg-white rounded-t-3xl max-h-[85%] border-t border-neutral-200"
+          style={{ boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}
+        >
 
           {/* CABECERA: Título + botón Cerrar */}
           <View className="flex-row items-center justify-between px-5 pt-4 pb-3 border-b border-neutral-200">
@@ -120,7 +124,8 @@ export function ModalSelectorEjercicio({
                   alCerrar();          // 2. Cierra este modal
                   setBusqueda("");     // 3. Limpia la búsqueda para la próxima vez
                 }}
-                className="flex-row items-center bg-white border border-neutral-200 rounded-2xl p-3 mb-3 shadow-xs active:bg-orange-50/50"
+                className="flex-row items-center bg-white border border-neutral-200 rounded-2xl p-3 mb-3 active:bg-orange-50"
+                style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.06)" }}
               >
                 {/* Imagen del ejercicio con transición de 200ms al cargar */}
                 <Image
