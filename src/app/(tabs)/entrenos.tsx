@@ -38,6 +38,7 @@ import {
   Alert,             // Diálogo nativo del sistema (confirmación, error)
   Modal,             // Ventana flotante encima del contenido
   Pressable,         // Área presionable más flexible que TouchableOpacity
+  ActivityIndicator, // Spinner de carga
 } from "react-native";
 
 // SafeAreaView: respeta los bordes seguros del dispositivo (notch, barra de estado)
@@ -50,20 +51,38 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 
 // Tipos del store de rutinas
-import { rutinasIniciales, Rutina } from "../../store/routines.store";
+import { Rutina } from "../../store/routines.store";
+import { obtenerImagenEjercicio } from "../../store/exercises.store";
 
 // Componente Modal para crear/editar rutinas (definido en components/)
 import { ModalRutina } from "../../components/RoutineModal";
 
+// Sesión del usuario y CRUD de rutinas en Firestore
+import { useAuth } from "@/context/AuthContext";
+import { useRutinas } from "@/hooks/useRutinas";
+import { mensajeErrorFirebase } from "@/lib/utils";
+
 export default function PantallaEntrenos() {
   // ──────────────────────────────────────────
-  // ESTADO LOCAL
-  // useState<Tipo>(valorInicial) → retorna [valor, setter]
-  // Cuando se llama al setter, React re-renderiza el componente
+  // DATOS DE FIRESTORE
+  // useRutinas escucha users/{uid}/rutinas en tiempo real
   // ──────────────────────────────────────────
+  const { user } = useAuth();
+  const {
+    rutinas,
+    cargando,
+    error,
+    crearRutina,
+    actualizarRutina,
+    eliminarRutina: eliminarRutinaFirestore,
+  } = useRutinas(user?.uid);
 
-  // Lista de rutinas — inicia con rutinasIniciales (vacía por defecto)
-  const [rutinas, setRutinas] = useState<Rutina[]>(rutinasIniciales);
+  const mostrarError = (e: unknown) =>
+    Alert.alert("Error al guardar", mensajeErrorFirebase(e));
+
+  // ──────────────────────────────────────────
+  // ESTADO LOCAL (solo de la interfaz)
+  // ──────────────────────────────────────────
 
   // Controla si el modal de crear/editar está visible
   const [modalVisible, setModalVisible] = useState(false);
@@ -96,20 +115,17 @@ export default function PantallaEntrenos() {
   };
 
   /**
-   * Guarda la rutina recibida desde el ModalRutina.
-   * Si `rutinaAEditar` existe → actualiza (map para reemplazar por id)
-   * Si `rutinaAEditar` es null → añade al inicio del array ([nueva, ...existentes])
+   * Guarda la rutina recibida desde el ModalRutina en Firestore.
+   * Si `rutinaAEditar` existe → actualiza el documento
+   * Si `rutinaAEditar` es null → crea un documento nuevo
+   * El modal se cierra al instante: Firestore actualiza la lista localmente
+   * y sincroniza con el servidor en segundo plano.
    */
   const guardarRutina = (rutinaGuardada: Rutina) => {
-    if (rutinaAEditar) {
-      // EDITAR: map recorre el array y reemplaza solo la que tiene el mismo id
-      setRutinas(
-        rutinas.map((r) => (r.id === rutinaGuardada.id ? rutinaGuardada : r))
-      );
-    } else {
-      // CREAR: spread operator agrega la nueva rutina al inicio
-      setRutinas([rutinaGuardada, ...rutinas]);
-    }
+    const operacion = rutinaAEditar
+      ? actualizarRutina(rutinaGuardada)
+      : crearRutina(rutinaGuardada);
+    operacion.catch(mostrarError);
     setModalVisible(false);
     setRutinaAEditar(null);
   };
@@ -129,8 +145,8 @@ export default function PantallaEntrenos() {
           text: "Eliminar",
           style: "destructive", // Muestra el botón en rojo en iOS
           onPress: () => {
-            // filter crea un nuevo array excluyendo la rutina con ese id
-            setRutinas(rutinas.filter((r) => r.id !== rutina.id));
+            // Borra el documento en Firestore; la lista se actualiza sola
+            eliminarRutinaFirestore(rutina.id).catch(mostrarError);
           },
         },
       ]
@@ -299,9 +315,9 @@ export default function PantallaEntrenos() {
               {rutina.ejercicios.slice(0, 3).map((ej) => (
                 <View key={ej.id} className="flex-row items-center mb-2">
                   {/* Renderizado condicional: imagen si existe, ícono si no */}
-                  {ej.imagen ? (
+                  {obtenerImagenEjercicio(ej.catalogoId) ? (
                     <Image
-                      source={ej.imagen}
+                      source={obtenerImagenEjercicio(ej.catalogoId)}
                       style={{ width: 32, height: 32, borderRadius: 8 }}
                       contentFit="cover" // Similar a object-fit: cover en CSS
                     />
@@ -349,7 +365,23 @@ export default function PantallaEntrenos() {
         {/* 8. ESTADO VACÍO
             Solo se renderiza si rutinas.length === 0
             Buena práctica: siempre mostrar algo cuando la lista está vacía */}
-        {rutinas.length === 0 && (
+        {/* Cargando desde Firestore */}
+        {cargando && (
+          <View className="items-center py-10">
+            <ActivityIndicator size="large" color="#F97316" />
+            <Text className="mt-3 text-sm text-neutral-500">Cargando tus rutinas...</Text>
+          </View>
+        )}
+
+        {/* Error de conexión o de permisos */}
+        {!cargando && error ? (
+          <View className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4">
+            <Text className="font-bold text-red-700">No se pudieron cargar las rutinas</Text>
+            <Text className="mt-1 text-sm text-red-600">{mensajeErrorFirebase(error)}</Text>
+          </View>
+        ) : null}
+
+        {!cargando && !error && rutinas.length === 0 && (
           <View className="bg-white border border-dashed border-neutral-300 rounded-2xl p-8 items-center justify-center my-3 shadow-xs">
             <View className="w-14 h-14 rounded-full bg-orange-100 items-center justify-center mb-3">
               <Ionicons name="barbell-outline" size={28} color="#EA580C" />

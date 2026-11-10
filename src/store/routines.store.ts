@@ -6,9 +6,8 @@
  *   1. Los tipos de datos (interfaces TypeScript)
  *   2. Los datos iniciales (listas de ejemplo)
  *
- * Esta app NO usa una base de datos ni Redux.
- * Los datos viven en el estado local de React (useState).
- * El store solo define las "formas" de los datos y los valores iniciales.
+ * Los datos se guardan en Firebase Firestore (ver src/hooks/useRutinas.ts).
+ * El store solo define las "formas" de los datos.
  *
  * 📌 ESTRUCTURA DE DATOS (Anidada)
  *
@@ -40,11 +39,14 @@ export interface Serie {
 // Un ejercicio puede tener múltiples series.
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export interface Ejercicio {
-  id: string;       // Identificador único
-  nombre: string;   // Nombre del ejercicio: "Sentadilla con Barra"
-  detalle?: string; // Descripción técnica (opcional, el "?" lo hace opcional)
-  imagen?: any;     // Imagen local con require() (opcional)
-  series: Serie[];  // Lista de series (arreglo de Serie)
+  id: string;          // Identificador único
+  nombre: string;      // Nombre del ejercicio: "Sentadilla con Barra"
+  detalle?: string;    // Descripción técnica (opcional, el "?" lo hace opcional)
+  // ID del ejercicio en el catálogo (exercises.store.ts).
+  // La imagen NO se guarda en Firestore (un require() no es serializable):
+  // se obtiene al mostrarla con obtenerImagenEjercicio(catalogoId).
+  catalogoId?: string;
+  series: Serie[];     // Lista de series (arreglo de Serie)
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -58,10 +60,5 @@ export interface Rutina {
   fechaCreacion?: string;  // Fecha de creación (opcional, no se usa aún)
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// DATOS INICIALES
-// Esta lista es el estado inicial del useState en entrenos.tsx
-// Está vacía para que el usuario cree sus propias rutinas.
-// Para agregar rutinas de ejemplo, añade objetos Rutina aquí.
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-export const rutinasIniciales: Rutina[] = [];
+// Las rutinas se guardan en Firestore: users/{uid}/rutinas/{rutinaId}
+// Ver src/hooks/useRutinas.ts

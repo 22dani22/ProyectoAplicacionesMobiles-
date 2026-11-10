@@ -51,7 +51,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { Rutina, Ejercicio, Serie } from "../store/routines.store";
 
 // Tipo e instancia del catálogo de ejercicios
-import { EjercicioCatalogo, catalogoEjercicios } from "../store/exercises.store";
+import {
+  EjercicioCatalogo,
+  catalogoEjercicios,
+  obtenerImagenEjercicio,
+} from "../store/exercises.store";
 
 // Modal selector de ejercicios (catálogo con imágenes)
 import { ModalSelectorEjercicio } from "./ExercisePickerModal";
@@ -107,7 +111,7 @@ export function ModalRutina({
           id: Date.now().toString(),
           nombre: primerEjercicio.nombre,
           detalle: primerEjercicio.detalle,
-          imagen: primerEjercicio.imagen,
+          catalogoId: primerEjercicio.id,
           series: [
             { id: "s-1", numeroSerie: 1, peso: 20, repeticiones: 10 },
             { id: "s-2", numeroSerie: 2, peso: 20, repeticiones: 10 },
@@ -131,7 +135,7 @@ export function ModalRutina({
       id: Date.now().toString() + Math.random(),
       nombre: item.nombre,
       detalle: item.detalle,
-      imagen: item.imagen,
+      catalogoId: item.id, // Solo el ID: la imagen se resuelve al mostrarla
       series: [
         { id: "s-1", numeroSerie: 1, peso: 20, repeticiones: 10 },
         { id: "s-2", numeroSerie: 2, peso: 20, repeticiones: 10 },
@@ -387,9 +391,9 @@ export function ModalRutina({
                   {/* CABECERA DEL EJERCICIO: Imagen + Nombre + Botón Eliminar */}
                   <View className="flex-row items-center justify-between mb-3">
                     <View className="flex-row items-center flex-1 mr-2">
-                      {ejercicio.imagen ? (
+                      {obtenerImagenEjercicio(ejercicio.catalogoId) ? (
                         <Image
-                          source={ejercicio.imagen}
+                          source={obtenerImagenEjercicio(ejercicio.catalogoId)}
                           style={{ width: 48, height: 48, borderRadius: 10 }}
                           contentFit="cover"
                         />

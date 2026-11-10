@@ -1,56 +1,75 @@
 /**
  * _layout.tsx — Layout Raíz (Root Layout)
  *
- * 📌 ¿QUÉ ES ESTE ARCHIVO?
- * En Expo Router, cada carpeta puede tener un "_layout.tsx".
- * El de la raíz (`src/app/_layout.tsx`) es el primero en ejecutarse
- * y envuelve a TODA la aplicación. Todo lo que pongas aquí afecta
- * a todas las pantallas.
+ * 📌 ¿QUÉ HACE?
+ * Envuelve a TODA la aplicación:
+ *   - Importa los estilos globales (NativeWind)
+ *   - Provee la sesión del usuario (AuthProvider)
+ *   - Mantiene el splash visible hasta saber si hay sesión
+ *   - Protege las rutas con Stack.Protected:
+ *       · Sin sesión → solo se puede ver el grupo (auth): login y registro
+ *       · Con sesión → solo se puede ver el grupo (tabs): la app
+ *     Al iniciar o cerrar sesión, Expo Router redirige automáticamente.
  *
- * 📌 ¿CUÁNDO SE USA?
- * Úsalo para:
- *   - Configuración global de navegación
- *   - Importar estilos globales (global.css)
- *   - Ocultar barras del sistema (NavigationBar)
- *   - Proveedores globales (Context, Redux, etc.)
+ * ⚠️ IMPORTANTE (error "Couldn't find a navigation context")
+ * El layout raíz NUNCA debe devolver `null` mientras carga la sesión:
+ * si el <Stack> no existe, las pantallas se renderizan sin contexto de
+ * navegación y la app se cae. En su lugar, el <Stack> se dibuja siempre y
+ * el splash nativo tapa la pantalla hasta que Firebase responde.
+ * (Patrón oficial: https://docs.expo.dev/router/advanced/authentication/)
  */
 
-// Importamos los estilos de NativeWind (Tailwind para React Native)
 // IMPORTANTE: Debe estar en el layout raíz para que funcione en toda la app
 import "../../global.css";
 
-// Stack: componente de navegación en pila de Expo Router
-// Equivalente a un historial de páginas (ir hacia adelante/atrás)
-import { Stack } from "expo-router";
-
-// NavigationBar: controla la barra de navegación inferior de Android
-// (los botones de inicio, atrás y recientes del sistema)
+import { useEffect } from "react";
+import { SplashScreen, Stack } from "expo-router";
 import { NavigationBar } from "expo-navigation-bar";
+
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+
+// Mantiene el splash hasta que Firebase resuelva la sesión guardada
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   return (
-    // Fragment (<>) agrupa elementos sin añadir un contenedor extra al DOM
-    <>
-      {/*
-       * NavigationBar hidden:
-       * Oculta la barra de navegación del sistema en Android.
-       * Esto da más espacio visual a la app (modo inmersivo).
-       * En iOS no tiene efecto porque iOS maneja su barra diferente.
-       */}
+    <AuthProvider>
+      {/* Oculta la barra de navegación del sistema en Android (modo inmersivo) */}
       <NavigationBar hidden />
+      {/* Controla el splash; no dibuja nada */}
+      <ControlSplash />
+      <RootNavigator />
+    </AuthProvider>
+  );
+}
 
-      {/*
-       * Stack: define que la navegación entre pantallas será en "pila"
-       * headerShown: false → oculta la barra de título nativa en TODAS las pantallas
-       *
-       * Stack.Screen name="(tabs)": registra el grupo de pestañas.
-       * El nombre "(tabs)" corresponde a la carpeta `src/app/(tabs)/`
-       * Los paréntesis en el nombre indican que es un "grupo de rutas"
-       * (no aparece en la URL/path de navegación)
-       */}
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack>
-    </>
+/** Oculta el splash recién cuando Firebase ya sabe si hay sesión. */
+function ControlSplash() {
+  const { cargando } = useAuth();
+
+  useEffect(() => {
+    if (!cargando) SplashScreen.hide();
+  }, [cargando]);
+
+  return null;
+}
+
+function RootNavigator() {
+  const { user } = useAuth();
+
+  // El <Stack> se renderiza SIEMPRE (aunque `cargando` sea true).
+  // Mientras carga, `user` es null y se monta el grupo (auth) detrás del splash.
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      {/* Con sesión: pestañas de la app */}
+      <Stack.Protected guard={!!user}>
+        <Stack.Screen name="(tabs)" />
+      </Stack.Protected>
+
+      {/* Sin sesión: login y registro */}
+      <Stack.Protected guard={!user}>
+        <Stack.Screen name="(auth)" />
+      </Stack.Protected>
+    </Stack>
   );
 }

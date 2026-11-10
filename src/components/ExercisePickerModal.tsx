@@ -75,7 +75,7 @@ export function ModalSelectorEjercicio({
           {/* CABECERA: Título + botón Cerrar */}
           <View className="flex-row items-center justify-between px-5 pt-4 pb-3 border-b border-neutral-200">
             <Text className="text-neutral-900 text-lg font-bold">
-              Seleccionar Ejercicio
+              Seleccionar Ejercicio         
             </Text>
             <TouchableOpacity
               onPress={alCerrar}

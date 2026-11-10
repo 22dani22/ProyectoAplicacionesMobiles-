@@ -77,3 +77,12 @@ export const catalogoEjercicios: EjercicioCatalogo[] = [
     imagen: require("@/assets/images/exercises/sentadilla_libre.jpg"),
   },
 ];
+
+/**
+ * Devuelve la imagen local de un ejercicio a partir de su ID de catálogo.
+ * Se usa porque en Firestore solo se guarda `catalogoId`, no la imagen.
+ */
+export function obtenerImagenEjercicio(catalogoId?: string) {
+  if (!catalogoId) return undefined;
+  return catalogoEjercicios.find((e) => e.id === catalogoId)?.imagen;
+}

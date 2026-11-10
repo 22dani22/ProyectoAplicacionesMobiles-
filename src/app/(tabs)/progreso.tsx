@@ -9,16 +9,33 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Alimento, TipoComida, alimentosIniciales } from "../../store/calories.store";
+import { TipoComida } from "../../store/calories.store";
+import { useAuth } from "@/context/AuthContext";
+import { useAlimentos } from "@/hooks/useAlimentos";
+import { fechaHoy, mensajeErrorFirebase } from "@/lib/utils";
 
 const TIPOS_DE_COMIDA: TipoComida[] = ["Desayuno", "Almuerzo", "Cena", "Snack"];
 
 export default function PantallaCalorias() {
-  const [alimentos, setAlimentos] = useState<Alimento[]>(alimentosIniciales);
-  const [metaDiaria, setMetaDiaria] = useState<number>(2000);
+  // Datos en Firestore: alimentos de HOY (users/{uid}/alimentos) y meta del perfil
+  const { user, perfil, actualizarPerfil } = useAuth();
+  const [hoy] = useState(fechaHoy);
+  const {
+    alimentos,
+    cargando,
+    error,
+    totalCalorias: totalConsumido,
+    agregarAlimento: agregarAlimentoFirestore,
+    eliminarAlimento: eliminarAlimentoFirestore,
+    limpiarDia,
+  } = useAlimentos(user?.uid, hoy);
+  const metaDiaria = perfil?.metaCalorias ?? 2000;
+  const mostrarError = (e: unknown) => Alert.alert("Error", mensajeErrorFirebase(e));
+
   const [filtroSeleccionado, setFiltroSeleccionado] = useState<string>("Todas");
 
   // Modales
@@ -34,7 +51,6 @@ export default function PantallaCalorias() {
   const [textoNuevaMeta, setTextoNuevaMeta] = useState(metaDiaria.toString());
 
   // Cálculos de calorías
-  const totalConsumido = alimentos.reduce((acumulador, item) => acumulador + item.calorias, 0);
   const caloriasRestantes = Math.max(0, metaDiaria - totalConsumido);
   const porcentajeProgreso = Math.min(100, Math.round((totalConsumido / metaDiaria) * 100));
 
@@ -63,15 +79,13 @@ export default function PantallaCalorias() {
       .toString()
       .padStart(2, "0")}`;
 
-    const nuevoAlimento: Alimento = {
-      id: Date.now().toString(),
+    // Se guarda en Firestore; la lista se actualiza sola en tiempo real
+    agregarAlimentoFirestore({
       nombre: nombreAlimento.trim(),
       calorias: caloriasNumero,
       tipoComida: tipoComidaSeleccionada,
       hora: horaTexto,
-    };
-
-    setAlimentos([nuevoAlimento, ...alimentos]);
+    }).catch(mostrarError);
     setNombreAlimento("");
     setCaloriasAlimento("");
     setModalAgregarVisible(false);
@@ -84,7 +98,9 @@ export default function PantallaCalorias() {
       {
         text: "Eliminar",
         style: "destructive",
-        onPress: () => setAlimentos(alimentos.filter((a) => a.id !== idAlimento)),
+        onPress: () => {
+          eliminarAlimentoFirestore(idAlimento).catch(mostrarError);
+        },
       },
     ]);
   };
@@ -93,7 +109,8 @@ export default function PantallaCalorias() {
   const guardarMeta = () => {
     const metaNumero = parseInt(textoNuevaMeta, 10);
     if (!isNaN(metaNumero) && metaNumero >= 500) {
-      setMetaDiaria(metaNumero);
+      // Se guarda en el perfil del usuario (users/{uid}.metaCalorias)
+      actualizarPerfil({ metaCalorias: metaNumero }).catch(mostrarError);
       setModalMetaVisible(false);
     } else {
       Alert.alert("Meta inválida", "Por favor ingresa un objetivo de al menos 500 kcal.");
@@ -263,7 +280,13 @@ export default function PantallaCalorias() {
               onPress={() => {
                 Alert.alert("Reiniciar día", "¿Deseas borrar todos los alimentos de hoy?", [
                   { text: "Cancelar", style: "cancel" },
-                  { text: "Reiniciar", style: "destructive", onPress: () => setAlimentos([]) },
+                  {
+                    text: "Reiniciar",
+                    style: "destructive",
+                    onPress: () => {
+                      limpiarDia().catch(mostrarError);
+                    },
+                  },
                 ]);
               }}
             >
@@ -312,7 +335,20 @@ export default function PantallaCalorias() {
           </View>
         ))}
 
-        {alimentosFiltrados.length === 0 && (
+        {cargando && (
+          <View className="items-center py-8">
+            <ActivityIndicator size="large" color="#F97316" />
+          </View>
+        )}
+
+        {!cargando && error ? (
+          <View className="mb-3 rounded-2xl border border-red-200 bg-red-50 p-4">
+            <Text className="font-bold text-red-700">No se pudieron cargar los alimentos</Text>
+            <Text className="mt-1 text-sm text-red-600">{mensajeErrorFirebase(error)}</Text>
+          </View>
+        ) : null}
+
+        {!cargando && !error && alimentosFiltrados.length === 0 && (
           <View className="bg-white border border-dashed border-neutral-300 rounded-2xl p-8 items-center justify-center my-3 shadow-xs">
             <View className="w-14 h-14 rounded-full bg-orange-50 items-center justify-center mb-3">
               <Ionicons name="restaurant-outline" size={28} color="#EA580C" />
