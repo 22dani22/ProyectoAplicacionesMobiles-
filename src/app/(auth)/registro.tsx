@@ -21,7 +21,7 @@ import { router } from "expo-router";
 
 import { useAuth } from "@/context/AuthContext";
 import { CampoTexto } from "@/components/CampoTexto";
-import { mensajeErrorFirebase } from "@/lib/utils";
+import { MAX_NOMBRE_PERSONA, mensajeErrorFirebase, validarNombre } from "@/lib/utils";
 
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -34,7 +34,11 @@ export default function PantallaRegistro() {
   const [enviando, setEnviando] = useState(false);
 
   const crearCuenta = async () => {
-    if (!nombre.trim()) return Alert.alert("Campo requerido", "Ingresa tu nombre.");
+    const validacionNombre = validarNombre(nombre, "tu nombre", MAX_NOMBRE_PERSONA);
+    if (validacionNombre.error) {
+      Alert.alert("Nombre inválido", validacionNombre.error);
+      return;
+    }
     if (!EMAIL_VALIDO.test(email.trim()))
       return Alert.alert("Correo inválido", "Ingresa un correo electrónico válido.");
     if (password.length < 6)
@@ -44,7 +48,7 @@ export default function PantallaRegistro() {
 
     setEnviando(true);
     try {
-      await registrar(nombre, email, password);
+      await registrar(validacionNombre.valor, email, password);
     } catch (e) {
       Alert.alert("No se pudo crear la cuenta", mensajeErrorFirebase(e));
     } finally {
@@ -75,6 +79,7 @@ export default function PantallaRegistro() {
             etiqueta="Nombre"
             icono="person-outline"
             placeholder="Tu nombre"
+            maxLength={MAX_NOMBRE_PERSONA}
             autoCapitalize="words"
             autoComplete="name"
             value={nombre}

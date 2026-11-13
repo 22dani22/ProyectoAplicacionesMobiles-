@@ -28,8 +28,8 @@ La aplicación utiliza el ecosistema oficial y moderno de Expo:
 
 | Biblioteca | Versión | Para qué se usa en el proyecto |
 | :--- | :--- | :--- |
-| **`expo`** | `~57.0.25` | Plataforma base y entorno de ejecución universal (Android, iOS y Web). |
-| **`expo-router`** | `~57.0.23` | Sistema de navegación basado en archivos y carpetas (`src/app/`). |
+| **`expo`** | `~57.0.33` | Plataforma base y entorno de ejecución universal (Android, iOS y Web). |
+| **`expo-router`** | `~57.0.31` | Sistema de navegación basado en archivos y carpetas (`src/app/`). |
 | **`nativewind` + `tailwindcss`** | `^4.2.7` / `^3.4.19` | Motor de estilos utilitarios mediante `className="..."` idéntico a Tailwind CSS en web. |
 | **`@expo/vector-icons`** | `^15.0.2` | Paquete oficial de iconos vectoriales (`Ionicons`, `FontAwesome5`, `MaterialCommunityIcons`, etc.). |
 | **`expo-image`** | `~57.0.5` | Componente de imagen de alto rendimiento con caché automático y transiciones suaves. |

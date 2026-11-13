@@ -56,6 +56,7 @@ import {
   catalogoEjercicios,
   obtenerImagenEjercicio,
 } from "../store/exercises.store";
+import { MAX_NOMBRE_RUTINA, validarNombre } from "../lib/utils";
 
 // Modal selector de ejercicios (catálogo con imágenes)
 import { ModalSelectorEjercicio } from "./ExercisePickerModal";
@@ -271,8 +272,9 @@ export function ModalRutina({
    * Si no → genera un id nuevo con Date.now() (crear)
    */
   const guardarRutina = () => {
-    if (!nombre.trim()) {
-      Alert.alert("Campo requerido", "Por favor ingresa un nombre para la rutina.");
+    const validacionNombre = validarNombre(nombre, "el nombre de la rutina", MAX_NOMBRE_RUTINA);
+    if (validacionNombre.error) {
+      Alert.alert("Nombre inválido", validacionNombre.error);
       return;
     }
 
@@ -283,7 +285,7 @@ export function ModalRutina({
 
     const rutinaGuardada: Rutina = {
       id: rutinaAEditar ? rutinaAEditar.id : Date.now().toString(),
-      nombre: nombre.trim(), // trim() elimina espacios en blanco al inicio y final
+      nombre: validacionNombre.valor,
       ejercicios,
     };
 
@@ -367,6 +369,7 @@ export function ModalRutina({
                   placeholderTextColor="#9CA3AF"
                   value={nombre}
                   onChangeText={setNombre}
+                  maxLength={MAX_NOMBRE_RUTINA}
                 />
               </View>
 

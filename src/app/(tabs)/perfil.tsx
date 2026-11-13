@@ -21,7 +21,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 import { useAuth } from "@/context/AuthContext";
-import { mensajeErrorFirebase } from "@/lib/utils";
+import { MAX_NOMBRE_PERSONA, mensajeErrorFirebase, validarNombre } from "@/lib/utils";
 
 export default function PerfilScreen() {
   const { user, perfil, cerrarSesion, actualizarPerfil, recuperarContrasena } = useAuth();
@@ -42,11 +42,15 @@ export default function PerfilScreen() {
 
   const guardar = async () => {
     const metaNumero = parseInt(meta, 10);
-    if (!nombre.trim()) return Alert.alert("Campo requerido", "El nombre no puede estar vacío.");
+    const validacionNombre = validarNombre(nombre, "tu nombre", MAX_NOMBRE_PERSONA);
+    if (validacionNombre.error) {
+      Alert.alert("Nombre inválido", validacionNombre.error);
+      return;
+    }
     if (isNaN(metaNumero) || metaNumero < 500)
       return Alert.alert("Meta inválida", "La meta debe ser de al menos 500 kcal.");
     try {
-      await actualizarPerfil({ nombre: nombre.trim(), metaCalorias: metaNumero });
+      await actualizarPerfil({ nombre: validacionNombre.valor, metaCalorias: metaNumero });
       setModalVisible(false);
     } catch (e) {
       Alert.alert("Error", mensajeErrorFirebase(e));
@@ -173,6 +177,7 @@ export default function PerfilScreen() {
               className="mb-4 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-base font-semibold text-neutral-900"
               value={nombre}
               onChangeText={setNombre}
+              maxLength={MAX_NOMBRE_PERSONA}
               placeholder="Tu nombre"
               placeholderTextColor="#9CA3AF"
             />

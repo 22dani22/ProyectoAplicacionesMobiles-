@@ -2,6 +2,31 @@
  * utils.ts — Utilidades compartidas
  */
 
+export const MAX_NOMBRE_PERSONA = 60;
+export const MAX_NOMBRE_RUTINA = 60;
+export const MAX_NOMBRE_ALIMENTO = 80;
+
+/** Limpia espacios y valida longitud sin limitar alfabetos ni puntuación. */
+export function validarNombre(
+  texto: string,
+  etiqueta: string,
+  maximo: number
+): { valor: string; error: string | null } {
+  const valor = texto.trim().replace(/\s+/g, " ");
+  const cantidadCaracteres = Array.from(valor).length;
+  const nombreEtiqueta = etiqueta.charAt(0).toUpperCase() + etiqueta.slice(1);
+
+  if (!valor) {
+    return { valor, error: `Ingresa ${etiqueta}.` };
+  }
+
+  if (cantidadCaracteres > maximo) {
+    return { valor, error: `${nombreEtiqueta} admite un máximo de ${maximo} caracteres.` };
+  }
+
+  return { valor, error: null };
+}
+
 /** Fecha LOCAL de hoy en formato YYYY-MM-DD (no UTC, para no saltar de día por la noche). */
 export function fechaHoy(): string {
   const d = new Date();

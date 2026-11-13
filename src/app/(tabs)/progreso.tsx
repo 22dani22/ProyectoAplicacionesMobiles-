@@ -16,7 +16,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { TipoComida } from "../../store/calories.store";
 import { useAuth } from "@/context/AuthContext";
 import { useAlimentos } from "@/hooks/useAlimentos";
-import { fechaHoy, mensajeErrorFirebase } from "@/lib/utils";
+import {
+  fechaHoy,
+  MAX_NOMBRE_ALIMENTO,
+  mensajeErrorFirebase,
+  validarNombre,
+} from "@/lib/utils";
 
 const TIPOS_DE_COMIDA: TipoComida[] = ["Desayuno", "Almuerzo", "Cena", "Snack"];
 
@@ -62,8 +67,13 @@ export default function PantallaCalorias() {
 
   // Guardar nuevo alimento
   const agregarAlimento = () => {
-    if (!nombreAlimento.trim()) {
-      Alert.alert("Campo requerido", "Por favor ingresa el nombre del alimento.");
+    const validacionNombre = validarNombre(
+      nombreAlimento,
+      "el nombre del alimento",
+      MAX_NOMBRE_ALIMENTO
+    );
+    if (validacionNombre.error) {
+      Alert.alert("Nombre inválido", validacionNombre.error);
       return;
     }
 
@@ -81,7 +91,7 @@ export default function PantallaCalorias() {
 
     // Se guarda en Firestore; la lista se actualiza sola en tiempo real
     agregarAlimentoFirestore({
-      nombre: nombreAlimento.trim(),
+      nombre: validacionNombre.valor,
       calorias: caloriasNumero,
       tipoComida: tipoComidaSeleccionada,
       hora: horaTexto,
@@ -409,6 +419,7 @@ export default function PantallaCalorias() {
                 placeholderTextColor="#9CA3AF"
                 value={nombreAlimento}
                 onChangeText={setNombreAlimento}
+                maxLength={MAX_NOMBRE_ALIMENTO}
               />
             </View>
 
