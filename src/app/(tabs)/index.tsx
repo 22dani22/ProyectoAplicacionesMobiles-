@@ -1,8 +1,8 @@
 /**
  * index.tsx — Inicio: resumen real del día del usuario
  *
- * Muestra el saludo con el nombre, las calorías de hoy frente a la meta
- * y las rutinas guardadas en Firestore.
+ * Muestra el saludo con el nombre, las calorías de hoy frente a la meta,
+ * las rutinas guardadas en Firestore y los últimos entrenamientos terminados.
  */
 import { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
@@ -13,13 +13,19 @@ import { router } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import { useRutinas } from "@/hooks/useRutinas";
 import { useAlimentos } from "@/hooks/useAlimentos";
+import { useEntrenamientos } from "@/hooks/useEntrenamientos";
+import { TarjetaEntrenamiento } from "@/components/TarjetaEntrenamiento";
 import { fechaHoy } from "@/lib/utils";
+
+/** Cuántos entrenamientos recientes se muestran en Inicio */
+const ENTRENOS_EN_INICIO = 3;
 
 export default function InicioScreen() {
   const { user, perfil } = useAuth();
   const [hoy] = useState(fechaHoy);
   const { rutinas } = useRutinas(user?.uid);
   const { totalCalorias, alimentos } = useAlimentos(user?.uid, hoy);
+  const { entrenamientos } = useEntrenamientos(user?.uid);
 
   const meta = perfil?.metaCalorias ?? 2000;
   const porcentaje = Math.min(100, Math.round((totalCalorias / meta) * 100));
@@ -108,6 +114,34 @@ export default function InicioScreen() {
             >
               <Text className="font-semibold text-neutral-700">Aún no tienes rutinas</Text>
               <Text className="mt-1 text-sm font-bold text-orange-600">+ Crear mi primera rutina</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Tus entrenamientos: los últimos terminados + "Ver todos" */}
+        <View className="mb-8">
+          <View className="mb-3 flex-row items-center justify-between">
+            <Text className="text-lg font-bold text-neutral-800">Tus entrenamientos</Text>
+            {entrenamientos.length > 0 && (
+              <TouchableOpacity onPress={() => router.push("/historial")} className="p-1">
+                <Text className="text-sm font-bold text-orange-600">Ver todos</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {entrenamientos.length > 0 ? (
+            entrenamientos
+              .slice(0, ENTRENOS_EN_INICIO)
+              .map((e) => <TarjetaEntrenamiento key={e.id} entrenamiento={e} />)
+          ) : (
+            <TouchableOpacity
+              onPress={() => router.push("/entrenos")}
+              className="items-center rounded-xl border border-dashed border-neutral-300 bg-white p-5"
+            >
+              <Text className="font-semibold text-neutral-700">
+                Aún no has terminado entrenamientos
+              </Text>
+              <Text className="mt-1 text-sm font-bold text-orange-600">Empezar una rutina</Text>
             </TouchableOpacity>
           )}
         </View>

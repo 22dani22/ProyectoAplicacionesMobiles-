@@ -42,7 +42,6 @@ import {
   ScrollView,
   KeyboardAvoidingView, // Sube el contenido cuando aparece el teclado
   Platform,
-  Alert,
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
@@ -56,7 +55,17 @@ import {
   catalogoEjercicios,
   obtenerImagenEjercicio,
 } from "../store/exercises.store";
-import { MAX_NOMBRE_RUTINA, validarNombre } from "../lib/utils";
+import {
+  MAX_EJERCICIOS_POR_RUTINA,
+  MAX_NOMBRE_RUTINA,
+  MAX_SERIES_POR_EJERCICIO,
+  pesoValido,
+  repsValidas,
+  validarEjercicios,
+  validarNombre,
+} from "../lib/utils";
+import { avisar } from "../lib/dialogos";
+import { CampoNumero } from "./CampoNumero";
 
 // Modal selector de ejercicios (catálogo con imágenes)
 import { ModalSelectorEjercicio } from "./ExercisePickerModal";
@@ -132,6 +141,10 @@ export function ModalRutina({
    * Date.now() + Math.random() asegura un id único incluso si se agrega rápido.
    */
   const alSeleccionarEjercicio = (item: EjercicioCatalogo) => {
+    if (ejercicios.length >= MAX_EJERCICIOS_POR_RUTINA) {
+      avisar("Límite alcanzado", `Una rutina admite un máximo de ${MAX_EJERCICIOS_POR_RUTINA} ejercicios.`);
+      return;
+    }
     const nuevoEjercicio: Ejercicio = {
       id: Date.now().toString() + Math.random(),
       nombre: item.nombre,
@@ -153,7 +166,7 @@ export function ModalRutina({
    */
   const eliminarEjercicio = (idEjercicio: string) => {
     if (ejercicios.length === 1) {
-      Alert.alert("Aviso", "La rutina debe tener al menos un ejercicio.");
+      avisar("Aviso", "La rutina debe tener al menos un ejercicio.");
       return;
     }
     setEjercicios(ejercicios.filter((ej) => ej.id !== idEjercicio));
@@ -169,6 +182,11 @@ export function ModalRutina({
    * Copia el peso y reps de la última serie para facilitar el ingreso.
    */
   const agregarSerie = (idEjercicio: string) => {
+    const ejercicio = ejercicios.find((ej) => ej.id === idEjercicio);
+    if (ejercicio && ejercicio.series.length >= MAX_SERIES_POR_EJERCICIO) {
+      avisar("Límite alcanzado", `Un ejercicio admite un máximo de ${MAX_SERIES_POR_EJERCICIO} series.`);
+      return;
+    }
     setEjercicios(
       ejercicios.map((ej) => {
         if (ej.id === idEjercicio) {
@@ -198,7 +216,7 @@ export function ModalRutina({
       ejercicios.map((ej) => {
         if (ej.id === idEjercicio) {
           if (ej.series.length === 1) {
-            Alert.alert("Aviso", "El ejercicio debe tener al menos una serie.");
+            avisar("Aviso", "El ejercicio debe tener al menos una serie.");
             return ej; // Devuelve el ejercicio sin cambios
           }
           const seriesFiltradas = ej.series.filter((s) => s.id !== idSerie);
@@ -216,15 +234,14 @@ export function ModalRutina({
 
   /**
    * Actualiza el peso de una serie específica.
-   * parseFloat(): convierte el texto del TextInput a número decimal.
-   * || 0: si no es un número válido, usa 0 como valor seguro.
+   * CampoNumero ya entrega el número limpio (NaN si el campo quedó vacío);
+   * la validación de rango se hace al mostrar el campo y al guardar.
    */
   const actualizarPesoSerie = (
     idEjercicio: string,
     idSerie: string,
-    textoPeso: string
+    valorPeso: number
   ) => {
-    const valorPeso = parseFloat(textoPeso) || 0;
     setEjercicios(
       ejercicios.map((ej) => {
         if (ej.id === idEjercicio) {
@@ -241,16 +258,12 @@ export function ModalRutina({
     );
   };
 
-  /**
-   * Actualiza las repeticiones de una serie específica.
-   * parseInt(texto, 10): convierte texto a entero en base 10.
-   */
+  /** Actualiza las repeticiones de una serie específica (número entero o NaN). */
   const actualizarRepeticionesSerie = (
     idEjercicio: string,
     idSerie: string,
-    textoReps: string
+    valorReps: number
   ) => {
-    const valorReps = parseInt(textoReps, 10) || 0;
     setEjercicios(
       ejercicios.map((ej) => {
         if (ej.id === idEjercicio) {
@@ -274,12 +287,19 @@ export function ModalRutina({
   const guardarRutina = () => {
     const validacionNombre = validarNombre(nombre, "el nombre de la rutina", MAX_NOMBRE_RUTINA);
     if (validacionNombre.error) {
-      Alert.alert("Nombre inválido", validacionNombre.error);
+      avisar("Nombre inválido", validacionNombre.error);
       return;
     }
 
     if (ejercicios.length === 0) {
-      Alert.alert("Campo requerido", "Agrega al menos un ejercicio a la rutina.");
+      avisar("Campo requerido", "Agrega al menos un ejercicio a la rutina.");
+      return;
+    }
+
+    // Peso y repeticiones de TODAS las series (campos en rojo = inválidos)
+    const errorSeries = validarEjercicios(ejercicios);
+    if (errorSeries) {
+      avisar("Revisa las series", errorSeries);
       return;
     }
 
@@ -462,30 +482,24 @@ export function ModalRutina({
                         {serie.numeroSerie}
                       </Text>
 
-                      {/* Input Peso:
-                          keyboardType="numeric" → abre teclado numérico
-                          value.toString() → convierte el número a string para el TextInput */}
-                      <TextInput
-                        className="bg-white text-neutral-900 text-center font-bold text-sm py-1.5 px-3 rounded-lg mx-1 flex-1 border border-neutral-200"
-                        keyboardType="numeric"
-                        value={serie.peso ? serie.peso.toString() : ""}
-                        placeholder="0"
-                        placeholderTextColor="#9CA3AF"
-                        onChangeText={(val) =>
-                          actualizarPesoSerie(ejercicio.id, serie.id, val)
-                        }
+                      {/* Input Peso: solo números con 1 decimal (0 a 500 kg)
+                          Borde rojo si el valor está fuera de rango */}
+                      <CampoNumero
+                        decimal
+                        valor={serie.peso}
+                        invalido={!pesoValido(serie.peso)}
+                        alCambiar={(val) => actualizarPesoSerie(ejercicio.id, serie.id, val)}
+                        className="mx-1 flex-1"
                       />
 
-                      {/* Input Repeticiones */}
-                      <TextInput
-                        className="bg-white text-neutral-900 text-center font-bold text-sm py-1.5 px-3 rounded-lg mx-1 flex-1 border border-neutral-200"
-                        keyboardType="numeric"
-                        value={serie.repeticiones ? serie.repeticiones.toString() : ""}
-                        placeholder="0"
-                        placeholderTextColor="#9CA3AF"
-                        onChangeText={(val) =>
+                      {/* Input Repeticiones: solo enteros (1 a 100) */}
+                      <CampoNumero
+                        valor={serie.repeticiones}
+                        invalido={!repsValidas(serie.repeticiones)}
+                        alCambiar={(val) =>
                           actualizarRepeticionesSerie(ejercicio.id, serie.id, val)
                         }
+                        className="mx-1 flex-1"
                       />
 
                       {/* Botón eliminar serie */}

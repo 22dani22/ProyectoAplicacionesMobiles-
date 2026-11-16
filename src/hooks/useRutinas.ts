@@ -18,10 +18,22 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
+import { MAX_NOMBRE_RUTINA, validarEjercicios, validarNombre } from "@/lib/utils";
 import type { Rutina } from "@/store/routines.store";
 
-/** Limpia la rutina antes de guardarla (sin id ni campos no serializables). */
+/**
+ * Valida y limpia la rutina antes de guardarla (sin id ni campos no serializables).
+ * Segunda capa de validación: aunque la pantalla ya valida, aquí se vuelve
+ * a revisar para que NUNCA llegue a Firestore un dato inválido.
+ * Si algo falla lanza un Error; la pantalla lo muestra como aviso.
+ */
 function aDocumento(rutina: Rutina) {
+  const errorNombre = validarNombre(rutina.nombre, "el nombre de la rutina", MAX_NOMBRE_RUTINA).error;
+  if (errorNombre) throw new Error(errorNombre);
+  if (rutina.ejercicios.length === 0) throw new Error("La rutina debe tener al menos un ejercicio.");
+  const errorSeries = validarEjercicios(rutina.ejercicios);
+  if (errorSeries) throw new Error(errorSeries);
+
   return {
     nombre: rutina.nombre,
     ejercicios: rutina.ejercicios.map((ej) => ({

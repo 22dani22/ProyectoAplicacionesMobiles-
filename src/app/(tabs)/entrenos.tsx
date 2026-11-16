@@ -12,7 +12,6 @@
  * │ rutinas              │ Lista completa de rutinas del usuario          │
  * │ modalVisible         │ true = muestra el modal de crear/editar        │
  * │ rutinaAEditar        │ Rutina seleccionada para editar (null = nueva) │
- * │ mostrarBanner        │ true = muestra el banner informativo amarillo  │
  * │ menuOpcionesVisible  │ true = muestra el menú inferior (···)          │
  * │ rutinaSeleccionada   │ Rutina sobre la que se abrió el menú (···)     │
  * └──────────────────────┴────────────────────────────────────────────────┘
@@ -25,8 +24,12 @@
  *   [Editar] → abrirMenuOpciones() → abrirModalEditar() → ModalRutina → guardarRutina()
  *              rutinaAEditar = rutina → sobreescribe la existente por id
  *
- *   [Eliminar] → abrirMenuOpciones() → eliminarRutina() → Alert de confirmación
- *                filtra la rutina del array por id
+ *   [Eliminar] → abrirMenuOpciones() → eliminarRutina() → confirmación
+ *                borra el documento en Firestore
+ *
+ *   [Empezar Rutina] → router.push("/entrenamiento/<id>")
+ *                      abre la pantalla de entrenamiento en curso
+ *                      (src/app/entrenamiento/[id].tsx)
  */
 
 import React, { useState } from "react";
@@ -35,7 +38,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,  // Botón que se oscurece al presionar
-  Alert,             // Diálogo nativo del sistema (confirmación, error)
   Modal,             // Ventana flotante encima del contenido
   Pressable,         // Área presionable más flexible que TouchableOpacity
   ActivityIndicator, // Spinner de carga
@@ -49,6 +51,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 // Tipos del store de rutinas
 import { Rutina } from "../../store/routines.store";
@@ -61,6 +64,7 @@ import { ModalRutina } from "../../components/RoutineModal";
 import { useAuth } from "@/context/AuthContext";
 import { useRutinas } from "@/hooks/useRutinas";
 import { mensajeErrorFirebase } from "@/lib/utils";
+import { avisar, confirmar } from "@/lib/dialogos";
 
 export default function PantallaEntrenos() {
   // ──────────────────────────────────────────
@@ -78,7 +82,7 @@ export default function PantallaEntrenos() {
   } = useRutinas(user?.uid);
 
   const mostrarError = (e: unknown) =>
-    Alert.alert("Error al guardar", mensajeErrorFirebase(e));
+    avisar("Error al guardar", mensajeErrorFirebase(e));
 
   // ──────────────────────────────────────────
   // ESTADO LOCAL (solo de la interfaz)
@@ -89,9 +93,6 @@ export default function PantallaEntrenos() {
 
   // Rutina que se está editando. null = estamos creando una nueva
   const [rutinaAEditar, setRutinaAEditar] = useState<Rutina | null>(null);
-
-  // Controla si se muestra el banner informativo amarillo
-  const [mostrarBanner, setMostrarBanner] = useState(true);
 
   // Menú de opciones de tarjeta (··· tres puntos)
   const [menuOpcionesVisible, setMenuOpcionesVisible] = useState(false);
@@ -131,34 +132,25 @@ export default function PantallaEntrenos() {
   };
 
   /**
-   * Elimina la rutina seleccionada tras confirmación con Alert.
-   * filter() devuelve un nuevo array sin la rutina con ese id.
+   * Elimina la rutina seleccionada tras confirmación.
+   * Borra el documento en Firestore; la lista se actualiza sola.
    */
   const eliminarRutina = (rutina: Rutina) => {
     setMenuOpcionesVisible(false);
-    Alert.alert(
-      "Eliminar Rutina",
-      `¿Estás seguro de que deseas eliminar "${rutina.nombre}"?`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Eliminar",
-          style: "destructive", // Muestra el botón en rojo en iOS
-          onPress: () => {
-            // Borra el documento en Firestore; la lista se actualiza sola
-            eliminarRutinaFirestore(rutina.id).catch(mostrarError);
-          },
-        },
-      ]
-    );
+    confirmar({
+      titulo: "Eliminar Rutina",
+      mensaje: `¿Estás seguro de que deseas eliminar "${rutina.nombre}"?`,
+      textoConfirmar: "Eliminar",
+      destructivo: true, // Muestra el botón en rojo en iOS
+      alConfirmar: () => {
+        eliminarRutinaFirestore(rutina.id).catch(mostrarError);
+      },
+    });
   };
 
-  /** Simula el inicio de un entrenamiento con un Alert informativo */
-  const iniciarEntrenamiento = (nombreRutina: string) => {
-    Alert.alert(
-      "Entrenamiento iniciado",
-      `¡Has comenzado la rutina de ${nombreRutina}! 💪`
-    );
+  /** Abre la pantalla de entrenamiento en curso para esa rutina */
+  const empezarRutina = (rutina: Rutina) => {
+    router.push({ pathname: "/entrenamiento/[id]", params: { id: rutina.id } });
   };
 
   /** Abre el menú de opciones (···) para una rutina específica */
@@ -183,34 +175,13 @@ export default function PantallaEntrenos() {
         contentContainerStyle={{ paddingBottom: 40 }} // Espacio al final del scroll
       >
         {/* 1. CABECERA SUPERIOR */}
-        <View className="flex-row items-center justify-between mb-5 mt-1">
-          <TouchableOpacity className="flex-row items-center">
-            <Text className="text-neutral-900 text-2xl font-black mr-1 tracking-tight">
-              Entrenamiento
-            </Text>
-            <Ionicons name="chevron-down" size={18} color="#1F2937" />
-          </TouchableOpacity>
-
-          <View className="flex-row items-center">
-            <TouchableOpacity className="mr-3 p-1">
-              <Ionicons name="refresh-outline" size={22} color="#1F2937" />
-            </TouchableOpacity>
-
-          </View>
+        <View className="mb-5 mt-1">
+          <Text className="text-neutral-900 text-2xl font-black tracking-tight">
+            Entrenamiento
+          </Text>
         </View>
 
-        {/* 2. BOTÓN "EMPEZAR ENTRENAMIENTO VACÍO" */}
-        <TouchableOpacity
-          onPress={() => iniciarEntrenamiento("Entrenamiento Vacío")}
-          className="bg-white border border-neutral-200 rounded-2xl py-3.5 px-4 mb-6 flex-row items-center justify-center active:bg-neutral-50"
-        >
-          <Ionicons name="add" size={22} color="#1F2937" />
-          <Text className="text-neutral-900 font-bold text-base ml-2">
-            Empezar Entrenamiento Vacío
-          </Text>
-        </TouchableOpacity>
-
-        {/* 3. CABECERA DE LA SECCIÓN "RUTINAS" */}
+        {/* 2. CABECERA DE LA SECCIÓN "RUTINAS" */}
         <View className="flex-row items-center justify-between mb-3">
           <Text className="text-neutral-900 text-xl font-bold">Rutinas</Text>
           <TouchableOpacity onPress={abrirModalCrear} className="p-1">
@@ -218,12 +189,11 @@ export default function PantallaEntrenos() {
           </TouchableOpacity>
         </View>
 
-        {/* 4. CUADROS DE ACCIÓN: "Nueva Rutina" y "Explorar" */}
-        <View className="flex-row justify-between mb-4">
-          {/* Cuadrado: Nueva Rutina → abre el modal de creación */}
+        {/* 3. BOTÓN "NUEVA RUTINA" → abre el modal de creación */}
+        <View className="mb-5">
           <TouchableOpacity
             onPress={abrirModalCrear}
-            className="flex-1 bg-white border border-neutral-200 rounded-2xl p-4 mr-2 flex-row items-center active:bg-neutral-50"
+            className="bg-white border border-neutral-200 rounded-2xl p-4 flex-row items-center active:bg-neutral-50"
           >
             <View className="w-10 h-10 rounded-xl bg-orange-100 items-center justify-center mr-3">
               <Ionicons name="clipboard-outline" size={20} color="#EA580C" />
@@ -235,46 +205,9 @@ export default function PantallaEntrenos() {
               Nueva Rutina
             </Text>
           </TouchableOpacity>
-
-          {/* Cuadrado: Explorar → placeholder con Alert */}
-          <TouchableOpacity
-            onPress={() => Alert.alert("Explorar", "Explorador de rutinas de la comunidad.")}
-            className="flex-1 bg-white border border-neutral-200 rounded-2xl p-4 ml-2 flex-row items-center active:bg-neutral-50"
-          >
-            <View className="w-10 h-10 rounded-xl bg-neutral-100 items-center justify-center mr-3">
-              <Ionicons name="search-outline" size={20} color="#4B5563" />
-            </View>
-            <Text
-              className="text-neutral-900 font-bold text-base flex-1"
-              numberOfLines={1}
-            >
-              Explorar
-            </Text>
-          </TouchableOpacity>
         </View>
 
-        {/* 5. BANNER INFORMATIVO
-            Renderizado condicional: {condición && <Componente />}
-            Solo se muestra si mostrarBanner === true */}
-        {mostrarBanner && (
-          <View className="bg-[#FEF08A] border border-amber-200 rounded-xl px-3.5 py-2.5 mb-5 flex-row items-center justify-between">
-            <View className="flex-row items-center flex-1 mr-2">
-              <Ionicons name="finger-print-outline" size={18} color="#713F12" />
-              <Text
-                className="text-[#713F12] text-xs font-semibold ml-2 flex-1"
-                numberOfLines={1}
-              >
-                Mantén presionada una rutina para reordenar
-              </Text>
-            </View>
-            {/* Al presionar × se oculta el banner (no se puede recuperar) */}
-            <TouchableOpacity onPress={() => setMostrarBanner(false)}>
-              <Ionicons name="close" size={16} color="#713F12" />
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* 6. CONTADOR DE RUTINAS */}
+        {/* 4. CONTADOR DE RUTINAS */}
         <View className="flex-row items-center mb-3">
           <Ionicons name="caret-down" size={14} color="#6B7280" />
           {/* rutinas.length → cantidad de rutinas en el array */}
@@ -283,7 +216,7 @@ export default function PantallaEntrenos() {
           </Text>
         </View>
 
-        {/* 7. LISTA DE TARJETAS DE RUTINAS
+        {/* 5. LISTA DE TARJETAS DE RUTINAS
             map(): recorre el array y devuelve un componente por cada elemento
             key={rutina.id}: prop obligatoria en listas para que React identifique cada elemento */}
         {rutinas.map((rutina) => (
@@ -350,9 +283,9 @@ export default function PantallaEntrenos() {
               )}
             </View>
 
-            {/* Botón principal de la tarjeta */}
+            {/* Botón principal → abre la pantalla de entrenamiento */}
             <TouchableOpacity
-              onPress={() => iniciarEntrenamiento(rutina.nombre)}
+              onPress={() => empezarRutina(rutina)}
               className="bg-orange-500 py-3 rounded-xl items-center justify-center active:bg-orange-600"
             >
               <Text className="text-white font-bold text-base">
@@ -362,7 +295,7 @@ export default function PantallaEntrenos() {
           </View>
         ))}
 
-        {/* 8. ESTADO VACÍO
+        {/* 6. ESTADO VACÍO
             Solo se renderiza si rutinas.length === 0
             Buena práctica: siempre mostrar algo cuando la lista está vacía */}
         {/* Cargando desde Firestore */}
@@ -404,7 +337,7 @@ export default function PantallaEntrenos() {
         )}
       </ScrollView>
 
-      {/* 9. MODAL CREAR/EDITAR RUTINA
+      {/* 7. MODAL CREAR/EDITAR RUTINA
           Se monta siempre pero solo es visible cuando modalVisible=true
           Props:
             - visible: controla si se muestra
@@ -421,7 +354,7 @@ export default function PantallaEntrenos() {
         }}
       />
 
-      {/* 10. MENÚ DE OPCIONES (···)
+      {/* 8. MENÚ DE OPCIONES (···)
           Modal de tipo "bottom sheet" (slide desde abajo)
           transparent=true: el fondo negro semitransparente es parte del Modal
           Pressable exterior cierra el menú al presionar fuera */}

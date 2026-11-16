@@ -64,6 +64,12 @@ function RootNavigator() {
       {/* Con sesión: pestañas de la app */}
       <Stack.Protected guard={!!user}>
         <Stack.Screen name="(tabs)" />
+        {/* Entrenamiento en curso. Sin gesto de deslizar para salir:
+            la salida pasa por la confirmación de la propia pantalla */}
+        <Stack.Screen name="entrenamiento/[id]" options={{ gestureEnabled: false }} />
+        {/* Historial de entrenamientos terminados y su detalle */}
+        <Stack.Screen name="historial/index" />
+        <Stack.Screen name="historial/[id]" />
       </Stack.Protected>
 
       {/* Sin sesión: login y registro */}
