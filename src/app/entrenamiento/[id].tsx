@@ -9,12 +9,13 @@
  * Permite:
  *   - Ver un cronómetro con el tiempo transcurrido
  *   - Editar el peso y las repeticiones de cada serie (solo números)
+ *   - Eliminar series (✕) que no se van a hacer
  *   - Marcar / desmarcar cada serie como completada (✓)
  *   - Ver el progreso (series completadas / totales)
  *   - Finalizar → guarda la sesión en users/{uid}/entrenamientos
  *   - Salir sin terminar → pide confirmación y no guarda nada
  *
- * Lo que se edita aquí SOLO queda en el historial de esta sesión:
+ * Lo que se edita o elimina aquí SOLO queda en el historial de esta sesión:
  * la rutina original no cambia.
  */
 
@@ -78,6 +79,9 @@ export default function PantallaEntrenamiento() {
   // se usan los valores originales de la rutina.
   const [cambios, setCambios] = useState<Record<string, CambioSerie>>({});
 
+  // Series eliminadas en esta sesión (claves "ejercicioId:serieId")
+  const [eliminadas, setEliminadas] = useState<Set<string>>(() => new Set());
+
   // Cronómetro: recalcula cada segundo a partir de la hora de inicio
   useEffect(() => {
     const intervalo = setInterval(() => {
@@ -95,10 +99,15 @@ export default function PantallaEntrenamiento() {
     };
   };
 
-  // Ejercicios con los valores actuales (editados) — es lo que se valida y se guarda
+  // Ejercicios tal como están en la sesión — es lo que se muestra, se valida y se guarda:
+  //   1. sin las series eliminadas
+  //   2. renumeradas (1, 2, 3...)
+  //   3. con el peso / reps editados
   const ejercicios = (rutina?.ejercicios ?? []).map((ej) => ({
     ...ej,
-    series: ej.series.map((s) => ({ ...s, ...valoresSerie(ej.id, s) })),
+    series: ej.series
+      .filter((s) => !eliminadas.has(claveSerie(ej.id, s.id)))
+      .map((s, indice) => ({ ...s, ...valoresSerie(ej.id, s), numeroSerie: indice + 1 })),
   }));
   const seriesTotales = ejercicios.reduce((total, ej) => total + ej.series.length, 0);
   const seriesCompletadas = completadas.size;
@@ -121,6 +130,24 @@ export default function PantallaEntrenamiento() {
   /** Guarda el nuevo peso o reps de una serie (solo en esta sesión) */
   const editarSerie = (clave: string, cambio: CambioSerie) => {
     setCambios((anterior) => ({ ...anterior, [clave]: { ...anterior[clave], ...cambio } }));
+  };
+
+  /**
+   * Quita una serie de esta sesión (la rutina original no cambia).
+   * Si estaba completada, también deja de contar en el progreso.
+   */
+  const eliminarSerie = (ejercicioId: string, clave: string) => {
+    const ejercicio = ejercicios.find((ej) => ej.id === ejercicioId);
+    if (ejercicio && ejercicio.series.length <= 1) {
+      avisar("Aviso", "El ejercicio debe tener al menos una serie.");
+      return;
+    }
+    setEliminadas((anterior) => new Set(anterior).add(clave));
+    setCompletadas((anterior) => {
+      const nuevo = new Set(anterior);
+      nuevo.delete(clave);
+      return nuevo;
+    });
   };
 
   /** Sale sin guardar; si ya marcó series, pide confirmación */
@@ -328,16 +355,17 @@ export default function PantallaEntrenamiento() {
 
                 {/* Cabecera de la tabla de series */}
                 <View className="mb-1 flex-row px-2">
-                  <Text className="w-12 text-xs font-bold uppercase text-neutral-400">Serie</Text>
+                  <Text className="w-10 text-xs font-bold uppercase text-neutral-400">Serie</Text>
                   <Text className="flex-1 text-center text-xs font-bold uppercase text-neutral-400">
                     Kg
                   </Text>
                   <Text className="flex-1 text-center text-xs font-bold uppercase text-neutral-400">
                     Reps
                   </Text>
-                  <Text className="w-12 text-center text-xs font-bold uppercase text-neutral-400">
+                  <Text className="w-11 text-center text-xs font-bold uppercase text-neutral-400">
                     ✓
                   </Text>
+                  <View className="w-8" />{/* Espacio para el botón ✕ */}
                 </View>
 
                 {/* Filas de series: peso y reps editables + check */}
@@ -352,7 +380,7 @@ export default function PantallaEntrenamiento() {
                       }`}
                     >
                       <Text
-                        className={`w-12 font-bold ${hecha ? "text-green-700" : "text-neutral-700"}`}
+                        className={`w-10 font-bold ${hecha ? "text-green-700" : "text-neutral-700"}`}
                       >
                         {s.numeroSerie}
                       </Text>
@@ -375,8 +403,8 @@ export default function PantallaEntrenamiento() {
                       {/* Check: marca / desmarca la serie */}
                       <TouchableOpacity
                         onPress={() => alternarSerie(clave)}
-                        hitSlop={8}
-                        className="w-12 items-center"
+                        hitSlop={6}
+                        className="w-11 items-center"
                       >
                         <View
                           className={`h-8 w-8 items-center justify-center rounded-lg ${
@@ -385,6 +413,15 @@ export default function PantallaEntrenamiento() {
                         >
                           {hecha && <Ionicons name="checkmark" size={20} color="#FFFFFF" />}
                         </View>
+                      </TouchableOpacity>
+
+                      {/* Eliminar la serie de esta sesión */}
+                      <TouchableOpacity
+                        onPress={() => eliminarSerie(ej.id, clave)}
+                        hitSlop={6}
+                        className="w-8 items-center"
+                      >
+                        <Ionicons name="close" size={18} color="#9CA3AF" />
                       </TouchableOpacity>
                     </View>
                   );
