@@ -102,6 +102,40 @@ export function validarEjercicios(
   return null;
 }
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CALORÍAS: límites por alimento y de la meta diaria
+// Una comida abundante ronda 800–1.500 kcal; 3.000 cubre casos extremos.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+export const CALORIAS_ALIMENTO_MIN = 1;
+export const CALORIAS_ALIMENTO_MAX = 3000;
+export const META_CALORIAS_MIN = 500;
+export const META_CALORIAS_MAX = 10000;
+
+/** Formato con separador de miles: 3000 → "3.000" */
+export function formatearMiles(numero: number): string {
+  return String(numero).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+/** Calorías de UN alimento: entero de 1 a 3.000. Devuelve el error o null. */
+export function validarCaloriasAlimento(calorias: number): string | null {
+  if (
+    !Number.isInteger(calorias) ||
+    calorias < CALORIAS_ALIMENTO_MIN ||
+    calorias > CALORIAS_ALIMENTO_MAX
+  ) {
+    return `Las calorías deben ser un número entero entre ${CALORIAS_ALIMENTO_MIN} y ${formatearMiles(CALORIAS_ALIMENTO_MAX)} kcal por alimento.`;
+  }
+  return null;
+}
+
+/** Meta diaria: entero de 500 a 10.000. Devuelve el error o null. */
+export function validarMetaCalorias(meta: number): string | null {
+  if (!Number.isInteger(meta) || meta < META_CALORIAS_MIN || meta > META_CALORIAS_MAX) {
+    return `La meta diaria debe estar entre ${META_CALORIAS_MIN} y ${formatearMiles(META_CALORIAS_MAX)} kcal.`;
+  }
+  return null;
+}
+
 /** Segundos → "mm:ss" o "h:mm:ss" (cronómetro). */
 export function formatearCronometro(totalSegundos: number): string {
   const h = Math.floor(totalSegundos / 3600);

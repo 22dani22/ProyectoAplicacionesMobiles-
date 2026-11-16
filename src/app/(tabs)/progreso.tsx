@@ -17,11 +17,20 @@ import { TipoComida } from "../../store/calories.store";
 import { useAuth } from "@/context/AuthContext";
 import { useAlimentos } from "@/hooks/useAlimentos";
 import {
+  CALORIAS_ALIMENTO_MAX,
   fechaHoy,
+  formatearMiles,
+  limpiarEntero,
   MAX_NOMBRE_ALIMENTO,
   mensajeErrorFirebase,
+  META_CALORIAS_MAX,
+  META_CALORIAS_MIN,
+  textoANumero,
+  validarCaloriasAlimento,
+  validarMetaCalorias,
   validarNombre,
 } from "@/lib/utils";
+import { avisar } from "@/lib/dialogos";
 
 const TIPOS_DE_COMIDA: TipoComida[] = ["Desayuno", "Almuerzo", "Cena", "Snack"];
 
@@ -39,7 +48,7 @@ export default function PantallaCalorias() {
     limpiarDia,
   } = useAlimentos(user?.uid, hoy);
   const metaDiaria = perfil?.metaCalorias ?? 2000;
-  const mostrarError = (e: unknown) => Alert.alert("Error", mensajeErrorFirebase(e));
+  const mostrarError = (e: unknown) => avisar("Error", mensajeErrorFirebase(e));
 
   const [filtroSeleccionado, setFiltroSeleccionado] = useState<string>("Todas");
 
@@ -54,6 +63,12 @@ export default function PantallaCalorias() {
 
   // Formulario meta
   const [textoNuevaMeta, setTextoNuevaMeta] = useState(metaDiaria.toString());
+
+  // Campos en rojo: solo si ya se escribió algo y está fuera de rango
+  const caloriasInvalidas =
+    caloriasAlimento !== "" && validarCaloriasAlimento(textoANumero(caloriasAlimento)) !== null;
+  const metaInvalida =
+    textoNuevaMeta !== "" && validarMetaCalorias(textoANumero(textoNuevaMeta)) !== null;
 
   // Cálculos de calorías
   const caloriasRestantes = Math.max(0, metaDiaria - totalConsumido);
@@ -73,13 +88,15 @@ export default function PantallaCalorias() {
       MAX_NOMBRE_ALIMENTO
     );
     if (validacionNombre.error) {
-      Alert.alert("Nombre inválido", validacionNombre.error);
+      avisar("Nombre inválido", validacionNombre.error);
       return;
     }
 
-    const caloriasNumero = parseInt(caloriasAlimento, 10);
-    if (isNaN(caloriasNumero) || caloriasNumero <= 0) {
-      Alert.alert("Calorías inválidas", "Ingresa una cantidad de calorías válida (mayor a 0).");
+    // Entero de 1 a 3.000 kcal (el campo ya solo acepta dígitos)
+    const caloriasNumero = textoANumero(caloriasAlimento);
+    const errorCalorias = validarCaloriasAlimento(caloriasNumero);
+    if (errorCalorias) {
+      avisar("Calorías inválidas", errorCalorias);
       return;
     }
 
@@ -117,14 +134,16 @@ export default function PantallaCalorias() {
 
   // Actualizar meta diaria
   const guardarMeta = () => {
-    const metaNumero = parseInt(textoNuevaMeta, 10);
-    if (!isNaN(metaNumero) && metaNumero >= 500) {
-      // Se guarda en el perfil del usuario (users/{uid}.metaCalorias)
-      actualizarPerfil({ metaCalorias: metaNumero }).catch(mostrarError);
-      setModalMetaVisible(false);
-    } else {
-      Alert.alert("Meta inválida", "Por favor ingresa un objetivo de al menos 500 kcal.");
+    // Entero de 500 a 10.000 kcal
+    const metaNumero = textoANumero(textoNuevaMeta);
+    const errorMeta = validarMetaCalorias(metaNumero);
+    if (errorMeta) {
+      avisar("Meta inválida", errorMeta);
+      return;
     }
+    // Se guarda en el perfil del usuario (users/{uid}.metaCalorias)
+    actualizarPerfil({ metaCalorias: metaNumero }).catch(mostrarError);
+    setModalMetaVisible(false);
   };
 
   // Icono según tipo de comida
@@ -383,15 +402,29 @@ export default function PantallaCalorias() {
         )}
       </ScrollView>
 
-      {/* Modal: Registrar Alimento */}
-      <Modal visible={modalAgregarVisible} animationType="slide" transparent>
+      {/* Modal: Registrar Alimento
+          Cuadro CENTRADO (antes era una hoja desde abajo que el teclado tapaba).
+          KeyboardAvoidingView achica el área visible cuando aparece el teclado y
+          el ScrollView mantiene el cuadro centrado en lo que queda; si no cabe,
+          se puede desplazar. */}
+      <Modal
+        visible={modalAgregarVisible}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setModalAgregarVisible(false)} // Botón "atrás" de Android
+      >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1 justify-end"
+          className="flex-1"
           style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
         >
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 24 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
           <View
-            className="bg-white rounded-t-3xl border-t border-neutral-200 p-5 pb-8"
+            className="bg-white rounded-3xl border border-neutral-200 p-5"
             style={{ boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}
           >
             {/* Cabecera Modal */}
@@ -428,14 +461,24 @@ export default function PantallaCalorias() {
               <Text className="text-neutral-600 text-xs font-bold uppercase mb-1.5">
                 Calorías aproximadas (kcal)
               </Text>
+              {/* Solo dígitos: limpiarEntero borra letras y símbolos al escribir */}
               <TextInput
-                className="bg-neutral-50 text-neutral-900 text-base font-semibold px-4 py-3 rounded-xl border border-neutral-200"
+                className={`text-neutral-900 text-base font-semibold px-4 py-3 rounded-xl border ${
+                  caloriasInvalidas ? "border-red-500 bg-red-50" : "border-neutral-200 bg-neutral-50"
+                }`}
                 placeholder="Ej: 350"
                 placeholderTextColor="#9CA3AF"
-                keyboardType="numeric"
+                keyboardType="number-pad"
+                inputMode="numeric"
+                maxLength={4}
                 value={caloriasAlimento}
-                onChangeText={setCaloriasAlimento}
+                onChangeText={(texto) => setCaloriasAlimento(limpiarEntero(texto))}
               />
+              <Text
+                className={`mt-1 text-xs ${caloriasInvalidas ? "text-red-600" : "text-neutral-400"}`}
+              >
+                Máximo {formatearMiles(CALORIAS_ALIMENTO_MAX)} kcal por alimento
+              </Text>
             </View>
 
             {/* Selector de Comida */}
@@ -474,6 +517,7 @@ export default function PantallaCalorias() {
               </View>
             </View>
           </View>
+          </ScrollView>
         </KeyboardAvoidingView>
       </Modal>
 
@@ -496,13 +540,24 @@ export default function PantallaCalorias() {
             </Text>
 
             <TextInput
-              className="bg-neutral-50 text-neutral-900 text-center text-3xl font-extrabold py-3 rounded-2xl border border-neutral-200 mb-5"
-              keyboardType="numeric"
+              className={`text-neutral-900 text-center text-3xl font-extrabold py-3 rounded-2xl border ${
+                metaInvalida ? "border-red-500 bg-red-50" : "border-neutral-200 bg-neutral-50"
+              }`}
+              keyboardType="number-pad"
+              inputMode="numeric"
+              maxLength={5}
               value={textoNuevaMeta}
-              onChangeText={setTextoNuevaMeta}
+              onChangeText={(texto) => setTextoNuevaMeta(limpiarEntero(texto))}
               placeholder="2000"
               placeholderTextColor="#9CA3AF"
             />
+            <Text
+              className={`mt-1.5 mb-5 text-center text-xs ${
+                metaInvalida ? "text-red-600" : "text-neutral-400"
+              }`}
+            >
+              Entre {META_CALORIAS_MIN} y {formatearMiles(META_CALORIAS_MAX)} kcal
+            </Text>
 
             <View className="flex-row justify-between space-x-3">
               <TouchableOpacity

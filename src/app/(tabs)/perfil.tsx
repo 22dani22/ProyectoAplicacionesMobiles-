@@ -21,7 +21,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 import { useAuth } from "@/context/AuthContext";
-import { MAX_NOMBRE_PERSONA, mensajeErrorFirebase, validarNombre } from "@/lib/utils";
+import {
+  formatearMiles,
+  limpiarEntero,
+  MAX_NOMBRE_PERSONA,
+  mensajeErrorFirebase,
+  META_CALORIAS_MAX,
+  META_CALORIAS_MIN,
+  textoANumero,
+  validarMetaCalorias,
+  validarNombre,
+} from "@/lib/utils";
 
 export default function PerfilScreen() {
   const { user, perfil, cerrarSesion, actualizarPerfil, recuperarContrasena } = useAuth();
@@ -29,6 +39,9 @@ export default function PerfilScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [nombre, setNombre] = useState("");
   const [meta, setMeta] = useState("");
+
+  // Campo meta en rojo si ya se escribió algo fuera de rango
+  const metaInvalida = meta !== "" && validarMetaCalorias(textoANumero(meta)) !== null;
 
   const nombreVisible = perfil?.nombre ?? user?.displayName ?? "Usuario";
   const emailVisible = perfil?.email ?? user?.email ?? "";
@@ -41,14 +54,15 @@ export default function PerfilScreen() {
   };
 
   const guardar = async () => {
-    const metaNumero = parseInt(meta, 10);
+    const metaNumero = textoANumero(meta);
     const validacionNombre = validarNombre(nombre, "tu nombre", MAX_NOMBRE_PERSONA);
     if (validacionNombre.error) {
       Alert.alert("Nombre inválido", validacionNombre.error);
       return;
     }
-    if (isNaN(metaNumero) || metaNumero < 500)
-      return Alert.alert("Meta inválida", "La meta debe ser de al menos 500 kcal.");
+    // Entero de 500 a 10.000 kcal
+    const errorMeta = validarMetaCalorias(metaNumero);
+    if (errorMeta) return Alert.alert("Meta inválida", errorMeta);
     try {
       await actualizarPerfil({ nombre: validacionNombre.valor, metaCalorias: metaNumero });
       setModalVisible(false);
@@ -185,14 +199,24 @@ export default function PerfilScreen() {
             <Text className="mb-1.5 text-xs font-bold uppercase text-neutral-600">
               Meta diaria (kcal)
             </Text>
+            {/* Solo dígitos: limpiarEntero borra letras y símbolos al escribir */}
             <TextInput
-              className="mb-5 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-base font-semibold text-neutral-900"
+              className={`rounded-xl border px-4 py-3 text-base font-semibold text-neutral-900 ${
+                metaInvalida ? "border-red-500 bg-red-50" : "border-neutral-200 bg-neutral-50"
+              }`}
               value={meta}
-              onChangeText={setMeta}
-              keyboardType="numeric"
+              onChangeText={(texto) => setMeta(limpiarEntero(texto))}
+              keyboardType="number-pad"
+              inputMode="numeric"
+              maxLength={5}
               placeholder="2000"
               placeholderTextColor="#9CA3AF"
             />
+            <Text
+              className={`mb-5 mt-1 text-xs ${metaInvalida ? "text-red-600" : "text-neutral-400"}`}
+            >
+              Entre {META_CALORIAS_MIN} y {formatearMiles(META_CALORIAS_MAX)} kcal
+            </Text>
 
             <View className="flex-row">
               <TouchableOpacity

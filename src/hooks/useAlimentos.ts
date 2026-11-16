@@ -17,6 +17,11 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
+import {
+  MAX_NOMBRE_ALIMENTO,
+  validarCaloriasAlimento,
+  validarNombre,
+} from "@/lib/utils";
 import type { Alimento } from "@/store/calories.store";
 
 export type NuevoAlimento = Omit<Alimento, "id" | "creadoEn" | "fecha">;
@@ -56,6 +61,12 @@ export function useAlimentos(uid: string | undefined, fecha: string) {
 
   const agregarAlimento = async (nuevo: NuevoAlimento) => {
     if (!uid) return;
+    // Segunda capa de validación antes de escribir en Firestore
+    const errorNombre = validarNombre(nuevo.nombre, "el nombre del alimento", MAX_NOMBRE_ALIMENTO).error;
+    if (errorNombre) throw new Error(errorNombre);
+    const errorCalorias = validarCaloriasAlimento(nuevo.calorias);
+    if (errorCalorias) throw new Error(errorCalorias);
+
     await addDoc(collection(db, "users", uid, "alimentos"), {
       ...nuevo,
       fecha,

@@ -27,6 +27,7 @@ import {
 import { doc, onSnapshot, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 
 import { auth, db } from "@/lib/firebase";
+import { validarMetaCalorias } from "@/lib/utils";
 
 export interface PerfilUsuario {
   nombre: string;
@@ -134,6 +135,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const actualizarPerfil: ValorAuth["actualizarPerfil"] = async (cambios) => {
     if (!user) return;
+    // Segunda capa de validación: la meta nunca llega fuera de rango a Firestore
+    if (cambios.metaCalorias !== undefined) {
+      const errorMeta = validarMetaCalorias(cambios.metaCalorias);
+      if (errorMeta) throw new Error(errorMeta);
+    }
     await updateDoc(doc(db, "users", user.uid), cambios);
     if (cambios.nombre) await updateProfile(user, { displayName: cambios.nombre });
   };
