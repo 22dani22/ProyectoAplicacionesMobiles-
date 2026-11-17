@@ -39,6 +39,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ac79109a-211c-41cf-8d33-611d3f720be1"
+      }
+    },
+    "owner": "nikokos-team"
   }
 }
