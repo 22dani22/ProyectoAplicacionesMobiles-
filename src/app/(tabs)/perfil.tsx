@@ -21,6 +21,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 import { useAuth } from "@/context/AuthContext";
+import { avisar, confirmar } from "@/lib/dialogos";
 import {
   formatearMiles,
   limpiarEntero,
@@ -90,14 +91,15 @@ export default function PerfilScreen() {
   };
 
   const confirmarCerrarSesion = () => {
-    Alert.alert("Cerrar sesión", "¿Seguro que quieres salir de tu cuenta?", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Cerrar sesión",
-        style: "destructive",
-        onPress: () => cerrarSesion().catch((e) => Alert.alert("Error", mensajeErrorFirebase(e))),
+    confirmar({
+      titulo: "Cerrar sesión",
+      mensaje: "¿Seguro que quieres salir de tu cuenta?",
+      textoConfirmar: "Cerrar sesión",
+      destructivo: true,
+      alConfirmar: () => {
+        cerrarSesion().catch((e) => avisar("Error", mensajeErrorFirebase(e)));
       },
-    ]);
+    });
   };
 
   const opciones = [
