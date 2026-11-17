@@ -8,6 +8,7 @@ import { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 
 import { useAuth } from "@/context/AuthContext";
@@ -38,9 +39,18 @@ export default function InicioScreen() {
       <ScrollView className="flex-1 px-5 pt-3" showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View className="mb-6">
-          <Text className="text-sm font-semibold uppercase tracking-wider text-orange-600">
-            FitPulse
-          </Text>
+          {/* Logo + nombre */}
+          <View className="mb-2 flex-row items-center">
+            <View className="mr-2 h-8 w-8 items-center justify-center rounded-lg bg-orange-500">
+              <Image
+                source={require("@/assets/images/logo-f.png")}
+                style={{ width: 24, height: 24 }}
+                contentFit="contain"
+                accessibilityLabel="Logo de FitPulse"
+              />
+            </View>
+            <Text className="text-lg font-black text-neutral-900">FitPulse</Text>
+          </View>
           <Text className="text-3xl font-extrabold text-neutral-900">
             ¡Hola{nombre ? `, ${nombre}` : ""}! 👋
           </Text>

@@ -16,7 +16,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 
 import { useAuth } from "@/context/AuthContext";
@@ -76,7 +76,12 @@ export default function PantallaLogin() {
           {/* Logo */}
           <View className="mb-10 items-center">
             <View className="mb-4 h-20 w-20 items-center justify-center rounded-3xl bg-orange-500">
-              <Ionicons name="barbell" size={40} color="#FFFFFF" />
+              <Image
+                source={require("@/assets/images/logo-f.png")}
+                style={{ width: 60, height: 60 }}
+                contentFit="contain"
+                accessibilityLabel="Logo de FitPulse"
+              />
             </View>
             <Text className="text-3xl font-black text-neutral-900">FitPulse</Text>
             <Text className="mt-1 text-base text-neutral-500">Entrena, registra y progresa</Text>
